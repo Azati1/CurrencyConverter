@@ -15,6 +15,4 @@ data class CurrencyResponse (
 
     @SerializedName("rates")
     val rates: Map<String, BigDecimal>
-) {
-
-}
+)

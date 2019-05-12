@@ -12,7 +12,7 @@ import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 
 @Module
-class AppModule {
+class AppModules {
 
     @Provides
     fun provideApi() : CurrenciesApi {

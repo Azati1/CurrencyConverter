@@ -2,6 +2,8 @@ package com.azati1.currencyconverter.view
 
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import com.arellomobile.mvp.MvpAppCompatActivity
 import com.arellomobile.mvp.presenter.InjectPresenter
@@ -15,30 +17,27 @@ import com.azati1.currencyconverter.interactor.CurrenciesInteractor
 import com.azati1.currencyconverter.model.CurrencyDataProvider
 import com.azati1.currencyconverter.presenter.CurrenciesPresenter
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.currency_item_view.*
+import kotlinx.android.synthetic.main.currency_item_view.view.*
 import java.math.BigDecimal
 import javax.inject.Inject
 
 class CurrenciesScreen : MvpAppCompatActivity(), CurrenciesView, RecyclerAdapterCallback {
 
-    lateinit var recyclerAdapter : RecyclerAdapter
-
     @InjectPresenter
     lateinit var currenciesPresenter: CurrenciesPresenter
 
-    @Inject lateinit var api : CurrenciesApi
-    @Inject lateinit var repository : CurrencyDataProvider
-    @Inject lateinit var interactor : CurrenciesInteractor
+    @Inject
+    lateinit var interactor : CurrenciesInteractor
 
-    private var baseCurrency = "RUB"
-    private var baseCurrencyAmount = BigDecimal("1.0")
+    private var baseCurrency : String? = null
+    private var baseCurrencyAmount = BigDecimal("100.0")
+
+    lateinit var recyclerAdapter : RecyclerAdapter
 
     @ProvidePresenter
     fun provideCurrenciesPresenter() : CurrenciesPresenter {
         return CurrenciesPresenter(interactor)
-    }
-
-    private fun refreshData() {
-        currenciesPresenter.loadCurrencies(baseCurrency)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,10 +45,32 @@ class CurrenciesScreen : MvpAppCompatActivity(), CurrenciesView, RecyclerAdapter
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         refreshLayout.setOnRefreshListener {
-            refreshData()
+            currenciesPresenter.refresh()
         }
+        mainCurrency.currencyRate.addTextChangedListener(object : TextWatcher {
+
+            override fun afterTextChanged(p0: Editable?) {
+                //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            }
+
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+
+
+                if (p0 == "" || p0.isNullOrEmpty())
+                    baseCurrencyAmount = BigDecimal.ZERO
+                else
+                    baseCurrencyAmount = BigDecimal(p0.toString())
+
+                recyclerAdapter.recalculateCurrencies(baseCurrencyAmount)
+                recyclerAdapter.notifyDataSetChanged()
+            }
+
+        })
         initRecyclerView()
-        //currenciesPresenter.refresh()
         currenciesPresenter.loadCurrencies(baseCurrency)
     }
 
@@ -70,16 +91,23 @@ class CurrenciesScreen : MvpAppCompatActivity(), CurrenciesView, RecyclerAdapter
     }
 
     override fun clearData() {
-
+        recyclerAdapter.clearData()
+        baseCurrency = "EUR"
+        baseCurrencyAmount = BigDecimal("100.0")
+        currencyName.text = baseCurrency
+        currencyRate.setText(baseCurrencyAmount.toEngineeringString())
     }
 
     override fun onItemClicked(currencyItemData: CurrencyItemData) {
         baseCurrency = currencyItemData.name
-        refreshData()
+        mainCurrency.currencyName.text = baseCurrency
+        Log.d("CDA", "new base " + currencyItemData.name)
+        currenciesPresenter.loadCurrencies(baseCurrency)
     }
 
     private fun updateItemAdapterData(currencyData: CurrencyData) {
-        recyclerAdapter = RecyclerAdapter(currencyData, baseCurrencyAmount,this)
+        Log.d("CDA", "amount is " + baseCurrencyAmount.toEngineeringString())
+        recyclerAdapter = RecyclerAdapter(currencyData, baseCurrencyAmount, this)
         recycler.adapter = recyclerAdapter
         recyclerAdapter.updateData(currencyData)
         recyclerAdapter.notifyDataSetChanged()

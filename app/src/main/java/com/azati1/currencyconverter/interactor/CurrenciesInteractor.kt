@@ -5,7 +5,7 @@ import rx.Observable
 
 interface CurrenciesInteractor {
 
-    fun getCurrencies(base: String) :
+    fun getCurrencies(base: String?) :
             Observable<CurrencyModel>
 
 }
